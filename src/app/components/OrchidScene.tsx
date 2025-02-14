@@ -6,30 +6,50 @@ import { OrbitControls } from '@react-three/drei';
 import { Suspense } from 'react';
 import { ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry.js';
 
+// Define interfaces for props
+interface OrchidPetalProps {
+  color: string;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+}
+
+interface OrchidProps {
+  position: [number, number, number];
+  color: string;
+  stemHeight: number;
+  opacity: number;
+  glowIntensity: number;
+  windIntensity?: number;
+}
+
+interface GrassProps {
+  opacity: number;
+  glowIntensity: number;
+  windIntensity?: number;
+}
+
+interface FlowerData {
+  position: [number, number, number];
+  id: number;
+}
 
 // Componente avanzado para un pétalo de orquídea
-const OrchidPetal = ({ color, position = [0,0,0], rotation = [0,0,0] }) => {
-  // Función paramétrica para generar la forma del pétalo
-  // u y v varían entre 0 y 1
+const OrchidPetal: React.FC<OrchidPetalProps> = ({ 
+  color, 
+  position = [0, 0, 0], 
+  rotation = [0, 0, 0] 
+}) => {
   const petalGeometry = useMemo(() => {
-    const petalFunc = (u, v, target) => {
-      // Escala de la longitud y ancho del pétalo
-      const length = 1.0; 
-      const maxWidth = 0.4; 
-
-      // u determina la posición a lo largo del pétalo (0 = base, 1 = punta)
-      // v determina la posición transversal (0 = borde izquierdo, 1 = borde derecho)
-      // Usamos una curva de Bézier simple para el contorno del pétalo
-      const curvatura = 0.3 * Math.sin(u * Math.PI); 
+    const petalFunc = (u: number, v: number, target: THREE.Vector3) => {
+      const length = 1.0;
+      const maxWidth = 0.4;
+      const curvatura = 0.3 * Math.sin(u * Math.PI);
       const x = (u * length) + curvatura;
-      // El ancho varía de forma que en la base es mayor y en la punta se estrecha
       const y = (v - 0.5) * maxWidth * (1 - u) * 2;
-      // Agregamos un ligero efecto de curvatura en z para dar un relieve natural
       const z = 0.1 * Math.sin(u * Math.PI * 2) * (v - 0.5);
       target.set(x, y, z);
     };
     return new ParametricGeometry(petalFunc, 30, 15);
-
   }, []);
 
   return (
@@ -45,8 +65,15 @@ const OrchidPetal = ({ color, position = [0,0,0], rotation = [0,0,0] }) => {
 };
 
 // Componente de la orquídea con varios pétalos y un labellum
-const Orchid = ({ position, color, stemHeight, opacity, glowIntensity, windIntensity = 0.1 }) => {
-  const flowerRef = useRef();
+const Orchid: React.FC<OrchidProps> = ({ 
+  position, 
+  color, 
+  stemHeight, 
+  opacity, 
+  glowIntensity, 
+  windIntensity = 0.1 
+}) => {
+  const flowerRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
     const elapsedTime = state.clock.getElapsedTime();
@@ -56,43 +83,42 @@ const Orchid = ({ position, color, stemHeight, opacity, glowIntensity, windInten
     }
   });
 
-  // Para los pétalos, los distribuimos en círculo y con ligeros desplazamientos para simular la naturalidad
   const petals = useMemo(() => {
     return Array.from({ length: 5 }).map((_, i) => {
       const angle = (i / 5) * Math.PI * 2;
-      // Desplazamiento radial para separar cada pétalo
-      const pos = [
+      const pos: [number, number, number] = [
         Math.cos(angle) * 0.2,
         Math.sin(angle) * 0.2,
         0
       ];
-      // Rotación para orientar cada pétalo hacia fuera
-      const rot = [0, 0, angle];
+      const rot: [number, number, number] = [0, 0, angle];
       return <OrchidPetal key={i} color={color} position={pos} rotation={rot} />;
     });
   }, [color]);
 
-  // Labellum central: se crea con una forma plana y se le da un material diferente
   const labellumGeometry = useMemo(() => {
     const shape = new THREE.Shape();
     shape.moveTo(-0.2, 0);
     shape.quadraticCurveTo(0, 0.3, 0.2, 0);
     shape.quadraticCurveTo(0, -0.15, -0.2, 0);
-    return new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 });
+    return new THREE.ExtrudeGeometry(shape, { 
+      depth: 0.05, 
+      bevelEnabled: true, 
+      bevelSize: 0.02, 
+      bevelThickness: 0.02, 
+      bevelSegments: 2 
+    });
   }, []);
 
   return (
     <group ref={flowerRef}>
-      {/* Tallo */}
       <mesh position={[position[0], position[1] + stemHeight / 2, position[2]]}>
         <cylinderGeometry args={[0.03, 0.03, stemHeight, 8]} />
         <meshStandardMaterial color="green" opacity={opacity} transparent />
       </mesh>
 
-      {/* Flor */}
       <group position={[position[0], position[1] + stemHeight, position[2]]}>
         {petals}
-        {/* Labellum */}
         <mesh position={[0, 0, 0.06]}>
           <primitive object={labellumGeometry} attach="geometry" />
           <meshStandardMaterial 
@@ -110,9 +136,9 @@ const Orchid = ({ position, color, stemHeight, opacity, glowIntensity, windInten
 };
 
 // Componente para el pasto
-const Grass = ({ opacity, glowIntensity, windIntensity = 0.05 }) => {
-  const grassRef = useRef();
-  const time = useRef(0);
+const Grass: React.FC<GrassProps> = ({ opacity, glowIntensity, windIntensity = 0.05 }) => {
+  const grassRef = useRef<THREE.Mesh>(null);
+  const time = useRef<number>(0);
 
   useFrame(() => {
     time.current += 0.01;
@@ -137,20 +163,21 @@ const Grass = ({ opacity, glowIntensity, windIntensity = 0.05 }) => {
 };
 
 // Componente principal
-const OrchidGarden = () => {
-  const [flowers, setFlowers] = useState([]);
-  const [flowerColor, setFlowerColor] = useState('#ff69b4');
-  const [stemHeight, setStemHeight] = useState(2);
-  const [opacity, setOpacity] = useState(0.8);
-  const [glowIntensity, setGlowIntensity] = useState(0.5);
-  const [grassOpacity, setGrassOpacity] = useState(0.8);
-  const [grassGlow, setGrassGlow] = useState(0.3);
+const OrchidGarden: React.FC = () => {
+  const [flowers, setFlowers] = useState<FlowerData[]>([]);
+  const [flowerColor, setFlowerColor] = useState<string>('#ff69b4');
+  const [stemHeight, setStemHeight] = useState<number>(2);
+  const [opacity, setOpacity] = useState<number>(0.8);
+  const [glowIntensity, setGlowIntensity] = useState<number>(0.5);
+  const [grassOpacity, setGrassOpacity] = useState<number>(0.8);
+  const [grassGlow, setGrassGlow] = useState<number>(0.3);
 
   const addFlower = () => {
     const x = (Math.random() - Math.random()) * 25;
     const z = (Math.random() - Math.random()) * 25;
     setFlowers([...flowers, { position: [x, -2, z], id: Date.now() }]);
   };
+
   const resetFlower = () => {
     setFlowers([]);
   };
@@ -168,7 +195,7 @@ const OrchidGarden = () => {
           onClick={resetFlower}
           className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
-          limpiar
+          Limpiar
         </button>
         <div className="space-y-2">
           <label className="block text-white">
@@ -204,7 +231,6 @@ const OrchidGarden = () => {
               className="ml-2"
             />
           </label>
-          
           <label className="block text-white">
             Intensidad del brillo:
             <input
@@ -230,7 +256,7 @@ const OrchidGarden = () => {
             />
           </label>
           <label className="block text-white">
-            brillo del pasto:
+            Brillo del pasto:
             <input
               type="range"
               min="0"
