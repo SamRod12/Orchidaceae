@@ -147,9 +147,12 @@ const OrchidGarden = () => {
   const [grassGlow, setGrassGlow] = useState(0.3);
 
   const addFlower = () => {
-    const x = (Math.random() - Math.random()) * 15;
-    const z = (Math.random() - Math.random()) * 15;
+    const x = (Math.random() - Math.random()) * 25;
+    const z = (Math.random() - Math.random()) * 25;
     setFlowers([...flowers, { position: [x, -2, z], id: Date.now() }]);
+  };
+  const resetFlower = () => {
+    setFlowers([]);
   };
 
   return (
@@ -160,6 +163,12 @@ const OrchidGarden = () => {
           className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
           Agregar Orquídea
+        </button>
+        <button
+          onClick={resetFlower}
+          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+          limpiar
         </button>
         <div className="space-y-2">
           <label className="block text-white">
@@ -195,6 +204,7 @@ const OrchidGarden = () => {
               className="ml-2"
             />
           </label>
+          
           <label className="block text-white">
             Intensidad del brillo:
             <input
@@ -204,6 +214,30 @@ const OrchidGarden = () => {
               step="0.1"
               value={glowIntensity}
               onChange={(e) => setGlowIntensity(Number(e.target.value))}
+              className="ml-2"
+            />
+          </label>
+          <label className="block text-white">
+            Opacidad del pasto:
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={grassOpacity}
+              onChange={(e) => setGrassOpacity(Number(e.target.value))}
+              className="ml-2"
+            />
+          </label>
+          <label className="block text-white">
+            brillo del pasto:
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={grassGlow}
+              onChange={(e) => setGrassGlow(Number(e.target.value))}
               className="ml-2"
             />
           </label>
